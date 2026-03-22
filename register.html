@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Register — ShareCircle</title>
+  <link rel="stylesheet" href="../css/styles.css"/>
+</head>
+<body>
+<div class="bg-mesh"></div>
+
+<div class="auth-wrapper">
+  <div class="auth-left">
+    <div class="auth-left-bg"></div>
+    <div class="auth-left-grid"></div>
+    <div class="auth-illustration">🌱</div>
+    <h1 class="auth-tagline">Join the<br/><em>sharing economy.</em></h1>
+    <p class="auth-sub">Connect with your community.<br/>Save money. Reduce waste.</p>
+    <div class="auth-features">
+      <div class="auth-feature">
+        <div class="auth-feature-icon">💰</div>
+        <div class="auth-feature-text">Save money by borrowing instead of buying</div>
+      </div>
+      <div class="auth-feature">
+        <div class="auth-feature-icon">🤝</div>
+        <div class="auth-feature-text">Build trust within your local community</div>
+      </div>
+      <div class="auth-feature">
+        <div class="auth-feature-icon">🌍</div>
+        <div class="auth-feature-text">Reduce waste and support sustainability</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="auth-right">
+    <div class="auth-form-box">
+      <h2 class="auth-title">Create account</h2>
+      <p class="auth-subtitle">Join ShareCircle for free — takes 30 seconds</p>
+
+      <div id="error-msg" class="alert alert-error" style="display:none;"></div>
+
+      <div id="success-screen" style="display:none; text-align:center; padding:2rem 0;">
+        <div style="font-size:4rem; margin-bottom:1rem;">🎉</div>
+        <h3 style="font-size:1.4rem; font-weight:800; margin-bottom:0.5rem; color:var(--teal);">Account Created!</h3>
+        <p style="color:var(--text-2); font-size:0.95rem; margin-bottom:0.5rem;">Welcome to ShareCircle!</p>
+        <p style="color:var(--muted); font-size:0.85rem; margin-bottom:1.5rem;">Please login with your new account to get started.</p>
+        <div style="background:var(--green-dim); border:1px solid rgba(34,197,94,0.2); border-radius:var(--radius-sm); padding:12px 16px; margin-bottom:1.5rem;">
+          <p style="color:var(--green); font-size:0.85rem; font-weight:600;">✓ Registration successful! Redirecting to login in <span id="countdown">3</span>s...</p>
+        </div>
+        <a href="login.html" class="btn btn-primary btn-full" style="padding:13px;">Login Now →</a>
+      </div>
+
+      <div id="form-section">
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          <div class="input-icon-wrap">
+            <span class="icon">👤</span>
+            <input type="text" id="name" class="form-input" placeholder="Enter your full name"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <div class="input-icon-wrap">
+            <span class="icon">✉️</span>
+            <input type="email" id="email" class="form-input" placeholder="you@example.com"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Phone Number</label>
+          <div class="input-icon-wrap">
+            <span class="icon">📱</span>
+            <input type="tel" id="phone" class="form-input" placeholder="+91 98765 43210"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Your Area / Location</label>
+          <div class="input-icon-wrap">
+            <span class="icon">📍</span>
+            <input type="text" id="location" class="form-input" placeholder="e.g. Anna Nagar, Chennai"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <div class="input-icon-wrap">
+            <span class="icon">🔒</span>
+            <input type="password" id="password" class="form-input" placeholder="Min. 6 characters"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Confirm Password</label>
+          <div class="input-icon-wrap">
+            <span class="icon">🔒</span>
+            <input type="password" id="confirm" class="form-input" placeholder="Repeat password"/>
+          </div>
+        </div>
+
+        <button id="register-btn" class="btn btn-primary btn-full" style="margin-top:0.75rem; padding:14px;">
+          Create Account
+        </button>
+
+        <p style="margin-top:1.5rem; text-align:center; font-size:0.875rem; color:var(--muted);">
+          Already have an account?
+          <a href="login.html" style="color:var(--teal); text-decoration:none; font-weight:700;">Sign in</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<canvas id="particle-canvas" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none;"></canvas>
+
+<!-- ── XSS PROTECTION ──────────────────────────── -->
+<script>
+function sanitize(str) {
+  if (!str) return "";
+  return str
+    .replace(/&/g,  "&amp;")
+    .replace(/</g,  "&lt;")
+    .replace(/>/g,  "&gt;")
+    .replace(/"/g,  "&quot;")
+    .replace(/'/g,  "&#x27;");
+}
+</script>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword, updateProfile, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCRTlgt_WwkQM76JR_ksy2euZ-Y8f4Jhf0",
+    authDomain: "sharecircle-a18c7.firebaseapp.com",
+    projectId: "sharecircle-a18c7",
+    storageBucket: "sharecircle-a18c7.firebasestorage.app",
+    messagingSenderId: "133755997960",
+    appId: "1:133755997960:web:62c031d55436403cbea6bd"
+  };
+
+  const app  = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db   = getFirestore(app);
+
+  document.getElementById("register-btn").addEventListener("click", async () => {
+    // ── SANITIZED INPUTS ───────────────────────────
+    const name     = sanitize(document.getElementById("name").value.trim());
+    const email    = document.getElementById("email").value.trim();
+    const phone    = document.getElementById("phone").value.trim();
+    const location = sanitize(document.getElementById("location").value.trim());
+    const password = document.getElementById("password").value;
+    const confirm  = document.getElementById("confirm").value;
+    const errEl    = document.getElementById("error-msg");
+    const btn      = document.getElementById("register-btn");
+
+    errEl.style.display = "none";
+
+    if (!name || !email || !phone || !location || !password || !confirm) {
+      errEl.textContent = "Please fill in all fields."; errEl.style.display = "block"; return;
+    }
+    if (password !== confirm) {
+      errEl.textContent = "Passwords do not match."; errEl.style.display = "block"; return;
+    }
+    if (password.length < 6) {
+      errEl.textContent = "Password must be at least 6 characters."; errEl.style.display = "block"; return;
+    }
+
+    btn.textContent = "Creating account…"; btn.disabled = true;
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(cred.user, { displayName: name });
+      await setDoc(doc(db, "users", cred.user.uid), {
+        name, email, phone, location,
+        createdAt: serverTimestamp()
+      });
+
+      await signOut(auth);
+
+      document.getElementById("form-section").style.display   = "none";
+      document.getElementById("success-screen").style.display = "block";
+
+      let count = 3;
+      const countEl = document.getElementById("countdown");
+      const timer = setInterval(() => {
+        count--;
+        countEl.textContent = count;
+        if (count === 0) { clearInterval(timer); window.location.href = "login.html"; }
+      }, 1000);
+
+    } catch (e) {
+      errEl.textContent = e.message || "Registration failed.";
+      errEl.style.display = "block";
+      btn.textContent = "Create Account"; btn.disabled = false;
+    }
+  });
+</script>
+
+<script>
+(function() {
+  const canvas = document.getElementById('particle-canvas');
+  const ctx = canvas.getContext('2d');
+  let W = canvas.width = window.innerWidth;
+  let H = canvas.height = window.innerHeight;
+  window.addEventListener('resize', () => { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; });
+  const TEAL = '0,212,170'; const PURPLE = '139,92,246';
+  class Particle {
+    constructor() { this.reset(); }
+    reset() { this.x=Math.random()*W; this.y=Math.random()*H; this.vx=(Math.random()-.5)*.4; this.vy=(Math.random()-.5)*.4; this.r=Math.random()*2+1; this.color=Math.random()>.6?PURPLE:TEAL; this.alpha=Math.random()*.4+.1; }
+    update() { this.x+=this.vx; this.y+=this.vy; if(this.x<0||this.x>W)this.vx*=-1; if(this.y<0||this.y>H)this.vy*=-1; }
+    draw() { ctx.beginPath(); ctx.arc(this.x,this.y,this.r,0,Math.PI*2); ctx.fillStyle=`rgba(${this.color},${this.alpha})`; ctx.fill(); }
+  }
+  const particles = Array.from({length:70},()=>new Particle());
+  function drawLines() {
+    for(let i=0;i<particles.length;i++) for(let j=i+1;j<particles.length;j++) {
+      const dx=particles[i].x-particles[j].x,dy=particles[i].y-particles[j].y,d=Math.sqrt(dx*dx+dy*dy);
+      if(d<130){ctx.beginPath();ctx.moveTo(particles[i].x,particles[i].y);ctx.lineTo(particles[j].x,particles[j].y);ctx.strokeStyle=`rgba(${TEAL},${(1-d/130)*.12})`;ctx.lineWidth=.7;ctx.stroke();}
+    }
+  }
+  function animate() { ctx.clearRect(0,0,W,H); particles.forEach(p=>{p.update();p.draw();}); drawLines(); requestAnimationFrame(animate); }
+  animate();
+})();
+</script>
+
+<script>
+const phrases = ["Borrow what you need.", "Lend what you don't use.", "Share with your community.", "Save money. Reduce waste.", "Connect with neighbors."];
+let i = 0, j = 0, isDeleting = false;
+const el = document.querySelector('.auth-sub');
+if (el) {
+  function type() {
+    const current = phrases[i];
+    el.textContent = isDeleting ? current.substring(0, j--) : current.substring(0, j++);
+    if (!isDeleting && j === current.length + 1) { isDeleting = true; setTimeout(type, 1500); return; }
+    if (isDeleting && j === 0) { isDeleting = false; i = (i + 1) % phrases.length; }
+    setTimeout(type, isDeleting ? 40 : 80);
+  }
+  type();
+}
+</script>
+</body>
+</html>

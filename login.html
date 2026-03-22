@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login — ShareCircle</title>
+  <link rel="stylesheet" href="../css/styles.css"/>
+</head>
+<body>
+<div class="bg-mesh"></div>
+
+<div class="auth-wrapper">
+  <div class="auth-left">
+    <div class="auth-illustration">🔄</div>
+    <h1 class="auth-tagline">Share more,<br/><em>buy less.</em></h1>
+    <p class="auth-sub">Borrow from your community.<br/>Lend what you don't use.</p>
+  </div>
+
+  <div class="auth-right">
+    <div class="auth-form-box">
+      <h2 class="auth-title">Welcome back!</h2>
+      <p class="auth-subtitle">Sign in to your ShareCircle account</p>
+
+      <div id="error-msg" style="display:none; color:var(--red); background:rgba(239,68,68,0.1);
+        border:1px solid rgba(239,68,68,0.3); padding:10px 14px; border-radius:8px;
+        font-size:0.875rem; margin-bottom:1rem;"></div>
+
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input type="email" id="email" class="form-input" placeholder="you@example.com"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" id="password" class="form-input" placeholder="••••••••"/>
+      </div>
+
+      <button id="login-btn" class="btn btn-primary btn-full" style="margin-top:0.5rem;">
+        Sign In
+      </button>
+
+      <p style="margin-top:1.5rem; text-align:center; font-size:0.875rem; color:var(--muted);">
+        Don't have an account?
+        <a href="register.html" style="color:var(--teal); text-decoration:none; font-weight:600;">
+          Create one
+        </a>
+      </p>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCRTlgt_WwkQM76JR_ksy2euZ-Y8f4Jhf0",
+    authDomain: "sharecircle-a18c7.firebaseapp.com",
+    projectId: "sharecircle-a18c7",
+    storageBucket: "sharecircle-a18c7.firebasestorage.app",
+    messagingSenderId: "133755997960",
+    appId: "1:133755997960:web:62c031d55436403cbea6bd"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  document.getElementById("login-btn").addEventListener("click", async () => {
+    const email    = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+    const errEl    = document.getElementById("error-msg");
+    const btn      = document.getElementById("login-btn");
+
+    if (!email || !password) {
+      errEl.textContent = "Please fill in all fields.";
+      errEl.style.display = "block"; return;
+    }
+
+    btn.textContent = "Signing in…"; btn.disabled = true;
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      window.location.href = "dashboard.html";
+    } catch (e) {
+      errEl.textContent = e.message;
+      errEl.style.display = "block";
+      btn.textContent = "Sign In"; btn.disabled = false;
+    }
+  });
+</script>
+<!-- ═══════════════════════════════════════════
+     PARTICLE BACKGROUND — paste before </body>
+     in ALL pages: login, register, dashboard,
+     browse, add-item
+     ═══════════════════════════════════════════ -->
+
+<canvas id="particle-canvas" style="
+  position:fixed; top:0; left:0;
+  width:100%; height:100%;
+  z-index:-1; pointer-events:none;
+"></canvas>
+
+<script>
+(function() {
+  const canvas = document.getElementById('particle-canvas');
+  const ctx    = canvas.getContext('2d');
+  let W = canvas.width  = window.innerWidth;
+  let H = canvas.height = window.innerHeight;
+
+  window.addEventListener('resize', () => {
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  });
+
+  const PARTICLE_COUNT = 80;
+  const MAX_DIST       = 140;
+  const TEAL           = '0,212,170';
+  const PURPLE         = '139,92,246';
+
+  class Particle {
+    constructor() { this.reset(); }
+    reset() {
+      this.x    = Math.random() * W;
+      this.y    = Math.random() * H;
+      this.vx   = (Math.random() - 0.5) * 0.4;
+      this.vy   = (Math.random() - 0.5) * 0.4;
+      this.r    = Math.random() * 2 + 1;
+      this.color= Math.random() > 0.6 ? PURPLE : TEAL;
+      this.alpha= Math.random() * 0.5 + 0.2;
+    }
+    update() {
+      this.x += this.vx;
+      this.y += this.vy;
+      if (this.x < 0 || this.x > W) this.vx *= -1;
+      if (this.y < 0 || this.y > H) this.vy *= -1;
+    }
+    draw() {
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${this.color},${this.alpha})`;
+      ctx.fill();
+    }
+  }
+
+  const particles = Array.from({ length: PARTICLE_COUNT }, () => new Particle());
+
+  function drawLines() {
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx   = particles[i].x - particles[j].x;
+        const dy   = particles[i].y - particles[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < MAX_DIST) {
+          const alpha = (1 - dist / MAX_DIST) * 0.15;
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.strokeStyle = `rgba(${TEAL},${alpha})`;
+          ctx.lineWidth   = 0.8;
+          ctx.stroke();
+        }
+      }
+    }
+  }
+
+  function animate() {
+    ctx.clearRect(0, 0, W, H);
+    particles.forEach(p => { p.update(); p.draw(); });
+    drawLines();
+    requestAnimationFrame(animate);
+  }
+  animate();
+})();
+</script>
+<script>
+const phrases = [
+  "Borrow what you need.",
+  "Lend what you don't use.",
+  "Share with your community.",
+  "Save money. Reduce waste.",
+  "Connect with neighbors."
+];
+let i = 0, j = 0, isDeleting = false;
+const el = document.querySelector('.auth-sub');
+if (el) {
+  function type() {
+    const current = phrases[i];
+    el.textContent = isDeleting
+      ? current.substring(0, j--)
+      : current.substring(0, j++);
+    if (!isDeleting && j === current.length + 1) {
+      isDeleting = true; setTimeout(type, 1500); return;
+    }
+    if (isDeleting && j === 0) {
+      isDeleting = false; i = (i + 1) % phrases.length;
+    }
+    setTimeout(type, isDeleting ? 40 : 80);
+  }
+  type();
+}
+</script>
+</body>
+</html>

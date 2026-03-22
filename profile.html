@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My Profile — ShareCircle</title>
+  <link rel="stylesheet" href="../css/styles.css"/>
+  <style>
+    .profile-cover {
+      height: 180px; border-radius: var(--radius) var(--radius) 0 0;
+      background: linear-gradient(135deg, #060A12 0%, #0A1525 30%, #071812 60%, #0D0A1F 100%);
+      position: relative; overflow: hidden;
+    }
+    .profile-cover::before {
+      content: '';
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse 80% 100% at 20% 50%, rgba(0,212,170,0.2) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 80% at 80% 50%, rgba(139,92,246,0.15) 0%, transparent 60%);
+    }
+    .profile-cover-grid {
+      position: absolute; inset: 0; opacity: 0.04;
+      background-image:
+        linear-gradient(rgba(0,212,170,1) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,212,170,1) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+    .profile-cover-text {
+      position: absolute; bottom: 20px; left: 2rem;
+      font-size: 0.75rem; font-weight: 700;
+      color: rgba(0,212,170,0.6); letter-spacing: 2px; text-transform: uppercase;
+    }
+    .profile-main {
+      background: rgba(13,20,36,0.9);
+      border: 1px solid var(--border); border-top: none;
+      border-radius: 0 0 var(--radius) var(--radius);
+      padding: 0 2rem 2rem; margin-bottom: 1.5rem;
+      backdrop-filter: blur(20px);
+    }
+    .profile-avatar-wrap {
+      display: flex; align-items: flex-end; justify-content: space-between;
+      padding-top: 0; margin-top: -46px; margin-bottom: 1.5rem;
+    }
+    .profile-avatar-big {
+      width: 92px; height: 92px; border-radius: 24px;
+      background: linear-gradient(135deg, rgba(0,212,170,0.25), rgba(139,92,246,0.2));
+      border: 3px solid var(--navy-2);
+      outline: 2px solid rgba(0,212,170,0.4);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2.2rem; font-weight: 800; color: var(--teal);
+      box-shadow: 0 0 30px rgba(0,212,170,0.3), var(--shadow);
+    }
+    .profile-name {
+      font-size: 1.6rem; font-weight: 800;
+      margin-bottom: 6px; letter-spacing: -0.5px;
+    }
+    .profile-meta {
+      display: flex; flex-wrap: wrap; gap: 1.25rem;
+      color: var(--text-3); font-size: 0.85rem;
+    }
+    .profile-meta span { display: flex; align-items: center; gap: 5px; }
+    .stat-mini {
+      background: rgba(13,20,36,0.8); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.25rem 1.5rem;
+      text-align: center; backdrop-filter: blur(20px);
+      transition: all var(--transition); position: relative; overflow: hidden;
+    }
+    .stat-mini::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, var(--teal), var(--purple), transparent);
+      opacity: 0.5;
+    }
+    .stat-mini:hover { transform: translateY(-3px); border-color: rgba(0,212,170,0.2); box-shadow: var(--glow-sm); }
+    /* FIXED: removed gradient text that was invisible */
+    .stat-mini-value {
+      font-size: 2rem; font-weight: 800;
+      color: var(--teal);
+      margin-bottom: 4px;
+    }
+    .stat-mini-label { font-size: 0.75rem; color: var(--text-3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; }
+    .badge-card {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 16px; border-radius: var(--radius-sm);
+      border: 1px solid var(--border); background: rgba(13,20,36,0.6);
+      transition: all var(--transition); backdrop-filter: blur(10px);
+    }
+    .badge-card:hover { border-color: rgba(0,212,170,0.2); transform: translateX(4px); }
+    .badge-icon { font-size: 1.75rem; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; border-radius: 12px; flex-shrink: 0; }
+    .badge-name { font-weight: 800; font-size: 0.9rem; margin-bottom: 2px; }
+    .badge-desc { font-size: 0.78rem; color: var(--text-3); }
+    @media(max-width:600px) {
+      .profile-meta { flex-direction: column; gap: 6px; }
+    }
+  </style>
+</head>
+<body>
+<div class="bg-mesh"></div>
+
+<nav class="navbar">
+  <a class="navbar-brand" href="dashboard.html">
+    <div class="logo-icon">🔄</div>
+    <span>Share<span style="color:var(--teal)">Circle</span></span>
+  </a>
+  <div class="navbar-links">
+    <a href="dashboard.html"     class="nav-link">Dashboard</a>
+    <a href="browse.html"        class="nav-link">Browse</a>
+    <a href="add-item.html"      class="nav-link">+ Add Item</a>
+    <a href="alerts.html" class="nav-link">🔔 Alerts</a>
+    <a href="profile.html"       class="nav-link active">👤 Profile</a>
+    <button id="logout-btn"      class="btn btn-secondary btn-sm">Logout</button>
+  </div>
+</nav>
+
+<div class="page-wrapper">
+  <div style="max-width:860px; margin:0 auto;">
+
+    <div class="profile-cover">
+      <div class="profile-cover-grid"></div>
+      <div class="profile-cover-text">ShareCircle Member</div>
+    </div>
+    <div class="profile-main">
+      <div class="profile-avatar-wrap">
+        <div style="display:flex; align-items:flex-end; gap:1.25rem;">
+          <div class="profile-avatar-big" id="profile-avatar">?</div>
+          <div style="padding-bottom:4px;">
+            <div class="profile-name" id="profile-name">Loading...</div>
+            <div class="profile-meta">
+              <span id="meta-email">✉️ —</span>
+              <span id="meta-phone">📱 —</span>
+              <span id="meta-location">📍 —</span>
+            </div>
+            <div style="margin-top:10px; display:flex; gap:6px; flex-wrap:wrap;">
+              <span class="badge badge-available">✓ Verified Member</span>
+              <span class="badge badge-returned" id="trust-badge">⭐ New Member</span>
+            </div>
+          </div>
+        </div>
+        <a href="add-item.html" class="btn btn-primary btn-sm" style="margin-bottom:4px;">+ Add Item</a>
+      </div>
+    </div>
+
+    <!-- STATS ROW -->
+    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; margin-bottom:1.5rem;">
+      <div class="stat-mini">
+        <div style="font-size:1.5rem; margin-bottom:8px;">📦</div>
+        <div class="stat-mini-value" id="stat-listed">0</div>
+        <div class="stat-mini-label">Items Listed</div>
+      </div>
+      <div class="stat-mini">
+        <div style="font-size:1.5rem; margin-bottom:8px;">🤝</div>
+        <div class="stat-mini-value" id="stat-lent">0</div>
+        <div class="stat-mini-label">Times Lent</div>
+      </div>
+      <div class="stat-mini">
+        <div style="font-size:1.5rem; margin-bottom:8px;">📥</div>
+        <div class="stat-mini-value" id="stat-borrowed">0</div>
+        <div class="stat-mini-label">Times Borrowed</div>
+      </div>
+      <div class="stat-mini">
+        <div style="font-size:1.5rem; margin-bottom:8px;">⭐</div>
+        <div class="stat-mini-value" id="stat-trust">—</div>
+        <div class="stat-mini-label">Trust Score</div>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem;">
+
+      <!-- EDIT PROFILE -->
+      <div class="card">
+        <div style="margin-bottom:1.5rem;">
+          <h2 style="font-size:1.05rem; font-weight:800;">✏️ Edit Profile</h2>
+          <p style="font-size:0.8rem; color:var(--text-3); margin-top:3px;">Update your personal information</p>
+        </div>
+        <div id="success-msg" class="alert alert-success" style="display:none;">✓ Profile updated!</div>
+        <div id="error-msg"   class="alert alert-error"   style="display:none;"></div>
+
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          <div class="input-icon-wrap">
+            <span class="icon">👤</span>
+            <input type="text" id="edit-name" class="form-input" placeholder="Your full name"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Phone Number</label>
+          <div class="input-icon-wrap">
+            <span class="icon">📱</span>
+            <input type="tel" id="edit-phone" class="form-input" placeholder="+91 98765 43210"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Your Area / Location</label>
+          <div class="input-icon-wrap">
+            <span class="icon">📍</span>
+            <input type="text" id="edit-location" class="form-input" placeholder="e.g. Anna Nagar, Chennai"/>
+          </div>
+        </div>
+        <button id="save-btn" class="btn btn-primary" style="width:100%; padding:13px;">
+          💾 Save Changes
+        </button>
+      </div>
+
+      <!-- BADGES + MY ITEMS -->
+      <div style="display:flex; flex-direction:column; gap:1.5rem;">
+
+        <div class="card">
+          <div style="margin-bottom:1.25rem;">
+            <h2 style="font-size:1.05rem; font-weight:800;">🏅 Your Badges</h2>
+            <p style="font-size:0.8rem; color:var(--text-3); margin-top:3px;">Earned through community activity</p>
+          </div>
+          <div id="badges-list" style="display:flex; flex-direction:column; gap:8px;">
+            <div class="spinner"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem;">
+            <h2 style="font-size:1.05rem; font-weight:800;">📦 My Items</h2>
+            <a href="add-item.html" class="btn btn-primary btn-sm">+ Add</a>
+          </div>
+          <div id="my-items-list"><div class="spinner"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<canvas id="particle-canvas" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none;"></canvas>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc, updateDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCRTlgt_WwkQM76JR_ksy2euZ-Y8f4Jhf0",
+    authDomain: "sharecircle-a18c7.firebaseapp.com",
+    projectId: "sharecircle-a18c7",
+    storageBucket: "sharecircle-a18c7.firebasestorage.app",
+    messagingSenderId: "133755997960",
+    appId: "1:133755997100:web:62c031d55436403cbea6bd"
+  };
+
+  const app  = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db   = getFirestore(app);
+
+  function getInitials(name) {
+    return name ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2) : '?';
+  }
+
+  function getBadges(lent, borrowed, listed) {
+    const badges = [];
+    if (listed  >= 1)  badges.push({ icon:'📦', name:'First Listing',  desc:'Listed your first item',   bg:'rgba(0,212,170,0.1)',  color:'var(--teal)'   });
+    if (lent    >= 1)  badges.push({ icon:'🤝', name:'First Lend',     desc:'Lent an item to someone',  bg:'rgba(34,197,94,0.1)', color:'var(--green)'  });
+    if (borrowed >= 1) badges.push({ icon:'📥', name:'First Borrow',   desc:'Borrowed your first item', bg:'rgba(59,130,246,0.1)',color:'var(--blue)'   });
+    if (lent    >= 5)  badges.push({ icon:'🏅', name:'Top Lender',     desc:'Lent items 5+ times',      bg:'rgba(245,158,11,0.1)',color:'var(--amber)'  });
+    if (listed  >= 5)  badges.push({ icon:'🌟', name:'Super Sharer',   desc:'Listed 5+ items',          bg:'rgba(139,92,246,0.1)',color:'var(--purple)' });
+    if (lent    >= 10) badges.push({ icon:'🦸', name:'Community Hero', desc:'Lent items 10+ times',     bg:'rgba(0,212,170,0.15)',color:'var(--teal)'   });
+    if (badges.length === 0) badges.push({ icon:'🌱', name:'New Member', desc:'Welcome to ShareCircle!', bg:'rgba(100,116,139,0.1)', color:'var(--muted)' });
+    return badges;
+  }
+
+  function getTrustScore(lent, borrowed, listed) {
+    return Math.min((listed * 10) + (lent * 20) + (borrowed * 15), 100);
+  }
+
+  document.getElementById("logout-btn").addEventListener("click", async () => {
+    await signOut(auth); window.location.href = "login.html";
+  });
+
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) { window.location.href = "login.html"; return; }
+
+    const userDoc = await getDoc(doc(db, "users", user.uid));
+    const p = userDoc.exists() ? userDoc.data() : {};
+
+    document.getElementById("profile-avatar").textContent  = getInitials(p.name || user.displayName);
+    document.getElementById("profile-name").textContent    = p.name || user.displayName || "Unknown";
+    document.getElementById("meta-email").textContent      = "✉️ " + (user.email || "—");
+    document.getElementById("meta-phone").textContent      = "📱 " + (p.phone || "Not added");
+    document.getElementById("meta-location").textContent   = "📍 " + (p.location || "Not added");
+    document.getElementById("edit-name").value     = p.name || user.displayName || "";
+    document.getElementById("edit-phone").value    = p.phone || "";
+    document.getElementById("edit-location").value = p.location || "";
+
+    const [itemsSnap, lentSnap, borrowedSnap] = await Promise.all([
+      getDocs(query(collection(db, "items"), where("ownerID", "==", user.uid))),
+      getDocs(query(collection(db, "borrowRequests"), where("ownerID",    "==", user.uid), where("requestStatus", "==", "returned"))),
+      getDocs(query(collection(db, "borrowRequests"), where("borrowerID", "==", user.uid), where("requestStatus", "==", "returned")))
+    ]);
+
+    const listed   = itemsSnap.size;
+    const lent     = lentSnap.size;
+    const borrowed = borrowedSnap.size;
+    const trust    = getTrustScore(lent, borrowed, listed);
+
+    document.getElementById("stat-listed").textContent   = listed;
+    document.getElementById("stat-lent").textContent     = lent;
+    document.getElementById("stat-borrowed").textContent = borrowed;
+    document.getElementById("stat-trust").textContent    = trust + "%";
+
+    const trustBadge = document.getElementById("trust-badge");
+    if      (trust >= 80) { trustBadge.textContent = "🏆 Trusted Member"; trustBadge.className = "badge badge-approved"; }
+    else if (trust >= 40) { trustBadge.textContent = "⭐ Active Member";  trustBadge.className = "badge badge-returned"; }
+    else                  { trustBadge.textContent = "🌱 New Member";     trustBadge.className = "badge badge-pending";  }
+
+    document.getElementById("badges-list").innerHTML = getBadges(lent, borrowed, listed).map(b => `
+      <div class="badge-card">
+        <div class="badge-icon" style="background:${b.bg}; color:${b.color};">${b.icon}</div>
+        <div>
+          <div class="badge-name" style="color:${b.color};">${b.name}</div>
+          <div class="badge-desc">${b.desc}</div>
+        </div>
+      </div>`).join('');
+
+    const myItems  = itemsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const myItemsEl = document.getElementById("my-items-list");
+    if (myItems.length === 0) {
+      myItemsEl.innerHTML = `<div class="empty-state" style="padding:2rem 1rem;"><div class="icon">📦</div><h3>No items yet</h3><p>Add something to lend!</p></div>`;
+    } else {
+      myItemsEl.innerHTML = myItems.map(item => `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--border);">
+          <div>
+            <div style="font-weight:700; font-size:0.88rem;">${item.name}</div>
+            <div style="display:flex; gap:6px; margin-top:4px; align-items:center;">
+              <span class="badge badge-${item.status}">${item.status}</span>
+              ${item.location ? `<span style="font-size:0.72rem; color:var(--muted);">📍 ${item.location}</span>` : ""}
+            </div>
+          </div>
+          <span style="font-size:0.75rem; color:var(--muted); background:rgba(255,255,255,0.04); padding:3px 8px; border-radius:99px;">${item.category || "Other"}</span>
+        </div>`).join('');
+    }
+
+    document.getElementById("save-btn").addEventListener("click", async () => {
+      const name     = document.getElementById("edit-name").value.trim();
+      const phone    = document.getElementById("edit-phone").value.trim();
+      const location = document.getElementById("edit-location").value.trim();
+      const errEl    = document.getElementById("error-msg");
+      const sucEl    = document.getElementById("success-msg");
+      const btn      = document.getElementById("save-btn");
+
+      errEl.style.display = sucEl.style.display = "none";
+      if (!name) { errEl.textContent = "Name is required."; errEl.style.display = "block"; return; }
+
+      btn.textContent = "Saving…"; btn.disabled = true;
+      try {
+        await updateDoc(doc(db, "users", user.uid), { name, phone, location });
+        sucEl.style.display = "block";
+        document.getElementById("profile-name").textContent   = name;
+        document.getElementById("profile-avatar").textContent = getInitials(name);
+        document.getElementById("meta-phone").textContent     = "📱 " + (phone || "Not added");
+        document.getElementById("meta-location").textContent  = "📍 " + (location || "Not added");
+        setTimeout(() => sucEl.style.display = "none", 3000);
+      } catch (e) {
+        errEl.textContent = e.message; errEl.style.display = "block";
+      }
+      btn.textContent = "💾 Save Changes"; btn.disabled = false;
+    });
+  });
+</script>
+
+<script>
+(function() {
+  const canvas = document.getElementById('particle-canvas');
+  const ctx = canvas.getContext('2d');
+  let W = canvas.width = window.innerWidth;
+  let H = canvas.height = window.innerHeight;
+  window.addEventListener('resize', () => { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; });
+  const TEAL = '0,212,170'; const PURPLE = '139,92,246';
+  class Particle {
+    constructor() { this.reset(); }
+    reset() { this.x=Math.random()*W; this.y=Math.random()*H; this.vx=(Math.random()-.5)*.4; this.vy=(Math.random()-.5)*.4; this.r=Math.random()*2+1; this.color=Math.random()>.6?PURPLE:TEAL; this.alpha=Math.random()*.4+.1; }
+    update() { this.x+=this.vx; this.y+=this.vy; if(this.x<0||this.x>W)this.vx*=-1; if(this.y<0||this.y>H)this.vy*=-1; }
+    draw() { ctx.beginPath(); ctx.arc(this.x,this.y,this.r,0,Math.PI*2); ctx.fillStyle=`rgba(${this.color},${this.alpha})`; ctx.fill(); }
+  }
+  const particles = Array.from({length:70},()=>new Particle());
+  function drawLines() {
+    for(let i=0;i<particles.length;i++) for(let j=i+1;j<particles.length;j++) {
+      const dx=particles[i].x-particles[j].x,dy=particles[i].y-particles[j].y,d=Math.sqrt(dx*dx+dy*dy);
+      if(d<130){ctx.beginPath();ctx.moveTo(particles[i].x,particles[i].y);ctx.lineTo(particles[j].x,particles[j].y);ctx.strokeStyle=`rgba(${TEAL},${(1-d/130)*.12})`;ctx.lineWidth=.7;ctx.stroke();}
+    }
+  }
+  function animate() { ctx.clearRect(0,0,W,H); particles.forEach(p=>{p.update();p.draw();}); drawLines(); requestAnimationFrame(animate); }
+  animate();
+})();
+</script>
+</body>
+</html>

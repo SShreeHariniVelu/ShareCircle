@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Browse Items — ShareCircle</title>
+  <link rel="stylesheet" href="../css/styles.css"/>
+</head>
+<body>
+<div class="bg-mesh"></div>
+
+<nav class="navbar">
+  <a class="navbar-brand" href="dashboard.html">
+    <div class="logo-icon">🔄</div>
+    <span>Share<span style="color:var(--teal)">Circle</span></span>
+  </a>
+  <div class="navbar-links">
+    <a href="dashboard.html" class="nav-link">Dashboard</a>
+    <a href="browse.html"    class="nav-link active">Browse</a>
+    <a href="add-item.html"  class="nav-link">+ Add Item</a>
+    <a href="alerts.html"    class="nav-link">🔔 Alerts</a>
+    <a href="profile.html"   class="nav-link">👤 Profile</a>
+    <button id="logout-btn"  class="btn btn-secondary btn-sm">Logout</button>
+  </div>
+</nav>
+
+<div class="page-wrapper">
+  <div class="page-header">
+    <h1 style="font-size:1.3rem; font-weight:800; margin-bottom:4px;">Browse Items 🔍</h1>
+    <p style="font-size:0.85rem; color:var(--muted);">Find items available to borrow from your community.</p>
+  </div>
+
+  <div class="search-bar">
+    <div class="search-input-wrap" style="flex:1;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <circle cx="11" cy="11" r="8"/>
+        <path d="m21 21-4.35-4.35"/>
+      </svg>
+      <input type="text" id="search" class="form-input" placeholder="Search items by name or description..."/>
+    </div>
+    <select id="filter-category" class="form-select" style="width:200px;">
+      <option value="">All Categories</option>
+      <option value="📚 Books">📚 Books</option>
+      <option value="🔧 Tools">🔧 Tools</option>
+      <option value="💻 Electronics">💻 Electronics</option>
+      <option value="⚽ Sports">⚽ Sports</option>
+      <option value="🍳 Kitchen">🍳 Kitchen</option>
+      <option value="👕 Clothing">👕 Clothing</option>
+      <option value="🎮 Games">🎮 Games</option>
+      <option value="🏠 Home & Furniture">🏠 Home & Furniture</option>
+      <option value="🎵 Music & Instruments">🎵 Music</option>
+      <option value="🌿 Garden & Plants">🌿 Garden</option>
+      <option value="🚲 Vehicles & Transport">🚲 Vehicles</option>
+      <option value="🧸 Toys & Kids">🧸 Toys & Kids</option>
+      <option value="📦 Other">📦 Other</option>
+    </select>
+    <select id="filter-location" class="form-select" style="width:180px;">
+      <option value="">All Locations</option>
+    </select>
+  </div>
+
+  <p id="results-count" style="font-size:0.85rem; color:var(--muted); margin-bottom:1.25rem;"></p>
+  <div id="items-grid" class="items-grid">
+    <div class="spinner"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script type="module">
+  import { initializeApp }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getFirestore, collection, query, where, getDocs, addDoc, doc, getDoc, serverTimestamp }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey:            "AIzaSyCRTlgt_WwkQM76JR_ksy2euZ-Y8f4Jhf0",
+    authDomain:        "sharecircle-a18c7.firebaseapp.com",
+    projectId:         "sharecircle-a18c7",
+    storageBucket:     "sharecircle-a18c7.firebasestorage.app",
+    messagingSenderId: "133755997960",
+    appId:             "1:133755997960:web:62c031d55436403cbea6bd"
+  };
+
+  const app  = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db   = getFirestore(app);
+
+  let allItems         = [];
+  let currentUser      = null;
+  let userProfile      = {};
+  let alreadyRequested = new Set();
+
+  function getCatEmoji(cat) {
+    if (!cat)                       return "📦";
+    if (cat.includes("Book"))       return "📚";
+    if (cat.includes("Tool"))       return "🔧";
+    if (cat.includes("Electronic")) return "💻";
+    if (cat.includes("Sport"))      return "⚽";
+    if (cat.includes("Kitchen"))    return "🍳";
+    if (cat.includes("Cloth"))      return "👕";
+    if (cat.includes("Game"))       return "🎮";
+    if (cat.includes("Home"))       return "🏠";
+    if (cat.includes("Music"))      return "🎵";
+    if (cat.includes("Garden"))     return "🌿";
+    if (cat.includes("Vehicle"))    return "🚲";
+    if (cat.includes("Toy"))        return "🧸";
+    return "📦";
+  }
+
+  function getInitials(name) {
+    return name
+      ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+      : '??';
+  }
+
+  function showToast(message, type) {
+    const toast = document.getElementById("toast");
+    const el    = document.createElement("div");
+    el.className   = "toast-msg " + (type || "success");
+    el.textContent = message;
+    toast.appendChild(el);
+    setTimeout(() => el.remove(), 3500);
+  }
+
+  document.getElementById("logout-btn").addEventListener("click", async () => {
+    await signOut(auth);
+    window.location.href = "login.html";
+  });
+
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) { window.location.href = "login.html"; return; }
+    currentUser = user;
+
+    const userDoc = await getDoc(doc(db, "users", user.uid));
+    userProfile   = userDoc.exists() ? userDoc.data() : {};
+
+    const itemsSnap = await getDocs(
+      query(collection(db, "items"), where("status", "==", "available"))
+    );
+    allItems = itemsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    const reqSnap = await getDocs(
+      query(collection(db, "borrowRequests"), where("borrowerID", "==", user.uid))
+    );
+    alreadyRequested = new Set(
+      reqSnap.docs
+        .filter(d => d.data().requestStatus !== "cancelled")
+        .map(d => d.data().itemId)
+    );
+
+    const locs   = [...new Set(allItems.map(i => i.location).filter(Boolean))];
+    const locSel = document.getElementById("filter-location");
+    locs.forEach(loc => {
+      const opt       = document.createElement("option");
+      opt.value       = loc;
+      opt.textContent = "📍 " + loc;
+      locSel.appendChild(opt);
+    });
+
+    renderItems(allItems);
+
+    document.getElementById("search").addEventListener("input", filterItems);
+    document.getElementById("filter-category").addEventListener("change", filterItems);
+    document.getElementById("filter-location").addEventListener("change", filterItems);
+  });
+
+  function filterItems() {
+    const q   = document.getElementById("search").value.toLowerCase();
+    const cat = document.getElementById("filter-category").value;
+    const loc = document.getElementById("filter-location").value;
+    renderItems(allItems.filter(item =>
+      (!q   || item.name.toLowerCase().includes(q) ||
+               (item.description || "").toLowerCase().includes(q)) &&
+      (!cat || item.category === cat) &&
+      (!loc || item.location === loc)
+    ));
+  }
+
+  function renderItems(items) {
+    const grid  = document.getElementById("items-grid");
+    const count = document.getElementById("results-count");
+
+    count.textContent = items.length === 0
+      ? ""
+      : "Showing " + items.length + " item" + (items.length > 1 ? "s" : "");
+
+    if (items.length === 0) {
+      grid.innerHTML = `
+        <div class="empty-state" style="grid-column:1/-1;">
+          <div class="icon">🔍</div>
+          <h3>No items found</h3>
+          <p>Try a different search or add your own item!</p>
+          <a href="add-item.html" class="btn btn-primary" style="margin-top:1rem;">+ Add Item</a>
+        </div>`;
+      return;
+    }
+
+    grid.innerHTML = items.map(item => {
+      let actionBtn = "";
+      if (item.ownerID === currentUser.uid) {
+        actionBtn = `<button class="btn btn-secondary btn-sm"
+          style="width:100%;cursor:default;opacity:0.6;" disabled>Your Item</button>`;
+      } else if (alreadyRequested.has(item.id)) {
+        actionBtn = `<button class="btn btn-amber btn-sm"
+          style="width:100%;cursor:default;" disabled>✓ Already Requested</button>`;
+      } else {
+        actionBtn = `<button class="btn btn-primary btn-sm" style="width:100%;"
+          data-id="${item.id}">Request to Borrow</button>`;
+      }
+
+      return `
+        <div class="item-card">
+          <div class="item-card-img" style="position:relative;height:200px;overflow:hidden;">
+            ${item.imageUrl
+              ? `<img src="${item.imageUrl}"
+                      style="position:absolute;top:0;left:0;
+                             width:100%;height:100%;object-fit:cover;"/>`
+              : `<span style="font-size:3.5rem;position:relative;z-index:1;">
+                   ${getCatEmoji(item.category)}
+                 </span>`
+            }
+            <div style="position:absolute;inset:0;
+                        background:linear-gradient(to bottom,transparent 40%,rgba(6,10,18,0.95) 100%);
+                        z-index:2;"></div>
+          </div>
+          <div class="item-card-body">
+            <div style="display:flex;justify-content:space-between;
+                        align-items:flex-start;margin-bottom:8px;">
+              <div class="item-card-title" style="margin-bottom:0;">${item.name}</div>
+              <span class="badge badge-available">Available</span>
+            </div>
+            ${item.location
+              ? `<div style="font-size:0.78rem;color:var(--muted);margin-bottom:8px;">
+                   📍 ${item.location}
+                 </div>`
+              : ""}
+            <div class="item-card-desc">
+              ${item.description || "No description provided."}
+            </div>
+            <div class="item-card-footer">
+              <div class="owner-info">
+                <div class="owner-avatar">${getInitials(item.ownerName)}</div>
+                <div>
+                  <div class="owner-name">${item.ownerName}</div>
+                  ${item.ownerLocation
+                    ? `<div class="owner-location">📍 ${item.ownerLocation}</div>`
+                    : ""}
+                </div>
+              </div>
+              <span style="font-size:0.75rem;color:var(--muted);
+                           background:rgba(255,255,255,0.05);
+                           padding:3px 8px;border-radius:99px;">
+                ${item.category || "Other"}
+              </span>
+            </div>
+            <div style="margin-top:12px;">
+              ${actionBtn}
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+
+    // attach click events to request buttons
+    grid.querySelectorAll("button[data-id]").forEach(btn => {
+      btn.addEventListener("click", () => handleRequest(btn.dataset.id));
+    });
+  }
+
+  async function handleRequest(itemId) {
+    const item = allItems.find(i => i.id === itemId);
+    if (!item) return;
+
+    try {
+      const existing = await getDocs(query(
+        collection(db, "borrowRequests"),
+        where("borrowerID", "==", currentUser.uid),
+        where("itemId",     "==", itemId)
+      ));
+      const active = existing.docs.filter(d => d.data().requestStatus !== "cancelled");
+      if (active.length > 0) {
+        showToast("⚠️ You already requested this item!", "error");
+        return;
+      }
+
+      await addDoc(collection(db, "borrowRequests"), {
+        itemId:           item.id,
+        itemName:         item.name,
+        ownerID:          item.ownerID,
+        ownerName:        item.ownerName,
+        ownerPhone:       item.ownerPhone    || "",
+        ownerLocation:    item.ownerLocation || "",
+        borrowerID:       currentUser.uid,
+        borrowerName:     userProfile.name     || currentUser.displayName || "Unknown",
+        borrowerPhone:    userProfile.phone    || "",
+        borrowerLocation: userProfile.location || "",
+        requestStatus:    "pending",
+        createdAt:        serverTimestamp()
+      });
+
+      alreadyRequested.add(itemId);
+      showToast("✓ Request sent for " + item.name + "!", "success");
+      renderItems(allItems);
+    } catch(e) {
+      showToast("Failed to send request. Try again.", "error");
+    }
+  }
+</script>
+
+<canvas id="particle-canvas"
+        style="position:fixed;top:0;left:0;width:100%;height:100%;
+               z-index:-1;pointer-events:none;"></canvas>
+<script>
+(function() {
+  var c   = document.getElementById('particle-canvas');
+  var ctx = c.getContext('2d');
+  var W   = c.width  = window.innerWidth;
+  var H   = c.height = window.innerHeight;
+  window.addEventListener('resize', function() {
+    W = c.width  = window.innerWidth;
+    H = c.height = window.innerHeight;
+  });
+  var T = '0,212,170', P = '139,92,246';
+  function Pt() {
+    this.x  = Math.random()*W; this.y  = Math.random()*H;
+    this.vx = (Math.random()-.5)*.4; this.vy = (Math.random()-.5)*.4;
+    this.r  = Math.random()*2+1;
+    this.c  = Math.random()>.6 ? P : T;
+    this.a  = Math.random()*.4+.1;
+  }
+  Pt.prototype.u = function() {
+    this.x+=this.vx; this.y+=this.vy;
+    if(this.x<0||this.x>W) this.vx*=-1;
+    if(this.y<0||this.y>H) this.vy*=-1;
+  };
+  Pt.prototype.d = function() {
+    ctx.beginPath(); ctx.arc(this.x,this.y,this.r,0,Math.PI*2);
+    ctx.fillStyle='rgba('+this.c+','+this.a+')'; ctx.fill();
+  };
+  var ps=[];
+  for(var i=0;i<70;i++) ps.push(new Pt());
+  function ln() {
+    for(var i=0;i<ps.length;i++) for(var j=i+1;j<ps.length;j++){
+      var dx=ps[i].x-ps[j].x, dy=ps[i].y-ps[j].y, d=Math.sqrt(dx*dx+dy*dy);
+      if(d<130){
+        ctx.beginPath(); ctx.moveTo(ps[i].x,ps[i].y); ctx.lineTo(ps[j].x,ps[j].y);
+        ctx.strokeStyle='rgba('+T+','+(1-d/130)*.12+')';
+        ctx.lineWidth=.7; ctx.stroke();
+      }
+    }
+  }
+  function go(){
+    ctx.clearRect(0,0,W,H);
+    for(var i=0;i<ps.length;i++){ps[i].u();ps[i].d();}
+    ln(); requestAnimationFrame(go);
+  }
+  go();
+})();
+</script>
+</body>
+</html>

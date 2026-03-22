@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Alerts — ShareCircle</title>
+  <link rel="stylesheet" href="../css/styles.css"/>
+  <style>
+    .notif-header-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 1.5rem;
+    }
+    .notif-tabs { display: flex; gap: 6px; margin-bottom: 1.5rem; }
+    .notif-tab {
+      padding: 8px 18px; border-radius: 99px; font-size: 0.82rem;
+      font-weight: 700; cursor: pointer; border: 1px solid var(--border);
+      background: transparent; color: var(--text-3); transition: all var(--transition);
+    }
+    .notif-tab.active {
+      background: var(--teal-dim); color: var(--teal);
+      border-color: rgba(0,212,170,0.3);
+    }
+    .notif-tab:hover:not(.active) { background: rgba(255,255,255,0.04); color: var(--text-2); }
+
+    .notif-item {
+      border-radius: var(--radius-sm); border: 1px solid var(--border);
+      margin-bottom: 10px; transition: all var(--transition);
+      background: rgba(13,20,36,0.8); backdrop-filter: blur(10px);
+      overflow: hidden; cursor: pointer;
+    }
+    .notif-item:hover { border-color: rgba(0,212,170,0.3); }
+
+    .notif-item-header {
+      display: flex; align-items: flex-start; gap: 14px;
+      padding: 16px 18px;
+    }
+    .notif-icon {
+      width: 48px; height: 48px; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem; flex-shrink: 0;
+    }
+    .notif-content { flex: 1; min-width: 0; }
+    .notif-title { font-weight: 800; font-size: 0.92rem; margin-bottom: 4px; }
+    .notif-desc  { font-size: 0.82rem; color: var(--text-3); line-height: 1.5; }
+    .notif-time  { font-size: 0.72rem; color: var(--muted); margin-top: 6px; }
+    .notif-arrow { font-size: 0.75rem; color: var(--muted); flex-shrink: 0; margin-top: 4px; }
+
+    .notif-expand {
+      display: none;
+      padding: 0 18px 16px 80px;
+      font-size: 0.82rem; color: var(--text-2); line-height: 1.8;
+    }
+    .notif-expand.open { display: block; }
+    .notif-expand-inner {
+      background: rgba(0,212,170,0.05);
+      border: 1px solid rgba(0,212,170,0.15);
+      border-radius: 10px; padding: 12px 16px;
+    }
+    .notif-expand a {
+      display: inline-block; margin-top: 10px;
+      color: var(--teal); font-weight: 700;
+      text-decoration: none; font-size: 0.82rem;
+    }
+
+    .notif-delete {
+      width: 30px; height: 30px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; border: 1px solid transparent;
+      background: transparent; color: var(--muted);
+      font-size: 0.82rem; flex-shrink: 0; transition: all var(--transition);
+    }
+    .notif-delete:hover {
+      background: rgba(239,68,68,0.1);
+      border-color: rgba(239,68,68,0.3); color: #EF4444;
+    }
+
+    .empty-notif { text-align: center; padding: 5rem 2rem; color: var(--text-3); }
+    .empty-notif .big-icon { font-size: 4rem; margin-bottom: 1.25rem; opacity: 0.6; }
+    .empty-notif h3 { font-size: 1.2rem; font-weight: 800; color: var(--text-2); margin-bottom: 6px; }
+    .unread-count {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 20px; height: 20px; border-radius: 99px;
+      background: var(--teal); color: #040812;
+      font-size: 0.7rem; font-weight: 800; margin-left: 6px;
+    }
+  </style>
+</head>
+<body>
+<div class="bg-mesh"></div>
+
+<nav class="navbar">
+  <a class="navbar-brand" href="dashboard.html">
+    <div class="logo-icon">🔄</div>
+    <span>Share<span style="color:var(--teal)">Circle</span></span>
+  </a>
+  <div class="navbar-links">
+    <a href="dashboard.html" class="nav-link">Dashboard</a>
+    <a href="browse.html"    class="nav-link">Browse</a>
+    <a href="add-item.html"  class="nav-link">+ Add Item</a>
+    <a href="alerts.html"    class="nav-link active">🔔 Alerts</a>
+    <a href="profile.html"   class="nav-link">👤 Profile</a>
+    <button id="logout-btn"  class="btn btn-secondary btn-sm">Logout</button>
+  </div>
+</nav>
+
+<div class="page-wrapper">
+  <div style="max-width:740px; margin:0 auto;">
+    <div class="notif-header-bar">
+      <div>
+        <h1 style="font-size:1.3rem; font-weight:800; margin-bottom:4px;">🔔 Alerts</h1>
+        <p style="font-size:0.85rem; color:var(--muted);">Click any alert to view details.</p>
+      </div>
+      <button id="clear-all-btn" class="btn btn-danger btn-sm">🗑 Clear All</button>
+    </div>
+
+    <div class="notif-tabs">
+      <button class="notif-tab active" data-tab="all">
+        All <span class="unread-count" id="count-all">0</span>
+      </button>
+      <button class="notif-tab" data-tab="requests">Requests</button>
+      <button class="notif-tab" data-tab="approvals">Approvals</button>
+      <button class="notif-tab" data-tab="returns">Returns</button>
+    </div>
+
+    <div id="notif-list"><div class="spinner"></div></div>
+  </div>
+</div>
+
+<canvas id="particle-canvas"
+        style="position:fixed;top:0;left:0;width:100%;height:100%;
+               z-index:-1;pointer-events:none;"></canvas>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getFirestore, collection, query, where, getDocs }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey:            "AIzaSyCRTlgt_WwkQM76JR_ksy2euZ-Y8f4Jhf0",
+    authDomain:        "sharecircle-a18c7.firebaseapp.com",
+    projectId:         "sharecircle-a18c7",
+    storageBucket:     "sharecircle-a18c7.firebasestorage.app",
+    messagingSenderId: "133755997960",
+    appId:             "1:133755997960:web:62c031d55436403cbea6bd"
+  };
+
+  const app  = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db   = getFirestore(app);
+
+  let allNotifs  = [];
+  let currentTab = "all";
+  let uid        = "";
+
+  const dKey    = () => "sc_del_" + uid;
+  function getDel()   { try { return new Set(JSON.parse(localStorage.getItem(dKey()) || "[]")); } catch { return new Set(); } }
+  function saveDel(s) { localStorage.setItem(dKey(), JSON.stringify([...s])); }
+
+  const CFG = {
+    pending:   { icon:"🔔", bg:"rgba(100,116,139,0.12)", tab:"requests"  },
+    approved:  { icon:"✅", bg:"rgba(34,197,94,0.1)",    tab:"approvals" },
+    rejected:  { icon:"❌", bg:"rgba(239,68,68,0.1)",    tab:"approvals" },
+    returning: { icon:"↩️", bg:"rgba(245,158,11,0.1)",   tab:"returns"   },
+    returned:  { icon:"🎉", bg:"rgba(0,212,170,0.1)",    tab:"returns"   },
+    cancelled: { icon:"🚫", bg:"rgba(239,68,68,0.08)",   tab:"requests"  },
+  };
+
+  function timeAgo(date) {
+    if (!date) return "Recently";
+    const diff = Date.now() - new Date(date).getTime();
+    const m = Math.floor(diff/60000), h = Math.floor(diff/3600000), d = Math.floor(diff/86400000);
+    if (m < 1)  return "Just now";
+    if (m < 60) return m + " min ago";
+    if (h < 24) return h + " hr ago";
+    return d + " day" + (d > 1 ? "s" : "") + " ago";
+  }
+
+  // ── Toggle expand ────────────────────────────────
+  window.toggleExpand = (key) => {
+    const el = document.getElementById("exp-" + key);
+    const ar = document.getElementById("arr-" + key);
+    if (!el) return;
+    const isOpen = el.classList.contains("open");
+    el.classList.toggle("open", !isOpen);
+    if (ar) ar.textContent = isOpen ? "▼" : "▲";
+  };
+
+  // ── Delete alert ─────────────────────────────────
+  window.delAlert = (key) => {
+    const d = getDel();
+    d.add(key);
+    saveDel(d);
+    render(currentTab);
+  };
+
+  function render(tab) {
+    const list    = document.getElementById("notif-list");
+    const deleted = getDel();
+    const visible = allNotifs.filter(n => !deleted.has(n.key));
+    const filtered = tab === "all" ? visible : visible.filter(n => n.tab === tab);
+
+    document.getElementById("count-all").textContent = visible.length;
+
+    if (filtered.length === 0) {
+      list.innerHTML = `
+        <div class="empty-notif">
+          <div class="big-icon">🔔</div>
+          <h3>No alerts here</h3>
+          <p>Activity on your items and requests will appear here.</p>
+        </div>`;
+      return;
+    }
+
+    list.innerHTML = filtered.map(n => `
+      <div class="notif-item">
+        <div class="notif-item-header" onclick="toggleExpand('${n.key}')">
+          <div class="notif-icon" style="background:${n.bg};">${n.icon}</div>
+          <div class="notif-content">
+            <div class="notif-title">${n.title}</div>
+            <div class="notif-desc">${n.desc}</div>
+            <div class="notif-time">🕐 ${timeAgo(n.time)}</div>
+          </div>
+          <span class="notif-arrow" id="arr-${n.key}">▼</span>
+          <button class="notif-delete" title="Delete"
+            onclick="event.stopPropagation(); delAlert('${n.key}')">🗑️</button>
+        </div>
+        <div class="notif-expand" id="exp-${n.key}">
+          <div class="notif-expand-inner">
+            ${n.extra}
+            <a href="dashboard.html">→ Go to Dashboard to take action</a>
+          </div>
+        </div>
+      </div>`).join('');
+  }
+
+  document.querySelectorAll(".notif-tab").forEach(tab => {
+    tab.addEventListener("click", () => {
+      document.querySelectorAll(".notif-tab").forEach(t => t.classList.remove("active"));
+      tab.classList.add("active");
+      currentTab = tab.dataset.tab;
+      render(currentTab);
+    });
+  });
+
+  document.getElementById("clear-all-btn").addEventListener("click", () => {
+    if (!confirm("Clear all alerts?")) return;
+    const d = getDel();
+    allNotifs.forEach(n => d.add(n.key));
+    saveDel(d);
+    render(currentTab);
+  });
+
+  document.getElementById("logout-btn").addEventListener("click", async () => {
+    await signOut(auth);
+    window.location.href = "login.html";
+  });
+
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) { window.location.href = "login.html"; return; }
+    uid = user.uid;
+
+    const [oSnap, bSnap] = await Promise.all([
+      getDocs(query(collection(db, "borrowRequests"), where("ownerID",    "==", user.uid))),
+      getDocs(query(collection(db, "borrowRequests"), where("borrowerID", "==", user.uid)))
+    ]);
+
+    allNotifs = [];
+
+    oSnap.docs.forEach(d => {
+      const r = d.data();
+      const cfg = CFG[r.requestStatus] || CFG.pending;
+      const titles = {
+        pending:   `New request for "${r.itemName}"`,
+        approved:  `You approved "${r.itemName}"`,
+        rejected:  `You rejected a request for "${r.itemName}"`,
+        returning: `${r.borrowerName} is returning "${r.itemName}"`,
+        returned:  `"${r.itemName}" has been returned!`,
+        cancelled: `${r.borrowerName} cancelled their request for "${r.itemName}"`,
+      };
+      const descs = {
+        pending:   `${r.borrowerName} wants to borrow this item from you.`,
+        approved:  `${r.borrowerName} can now contact you to pick up the item.`,
+        rejected:  `The borrow request from ${r.borrowerName} was declined.`,
+        returning: `${r.borrowerName} says they returned the item. Please confirm receipt.`,
+        returned:  `Item is now available again! 🎉`,
+        cancelled: `"${r.itemName}" is now available for other requests.`,
+      };
+      const extra = `
+        <b>📦 Item:</b> ${r.itemName}<br>
+        <b>👤 From:</b> ${r.borrowerName}
+        ${r.borrowerPhone    ? "<br><b>📱 Phone:</b> " + r.borrowerPhone    : ""}
+        ${r.borrowerLocation ? "<br><b>📍 Location:</b> " + r.borrowerLocation : ""}
+      `;
+      allNotifs.push({
+        key: "o_" + d.id, icon: cfg.icon, bg: cfg.bg, tab: cfg.tab,
+        title: titles[r.requestStatus] || "Update",
+        desc:  descs[r.requestStatus]  || "",
+        time:  r.createdAt?.toDate?.() || null,
+        extra,
+      });
+    });
+
+    bSnap.docs.forEach(d => {
+      const r = d.data();
+      if (r.requestStatus === "pending" || r.requestStatus === "cancelled") return;
+      const cfg = CFG[r.requestStatus] || CFG.pending;
+      const titles = {
+        approved:  `Your request for "${r.itemName}" was approved! 🎉`,
+        rejected:  `Your request for "${r.itemName}" was declined.`,
+        returning: `Return initiated for "${r.itemName}"`,
+        returned:  `"${r.itemName}" return confirmed!`,
+      };
+      const descs = {
+        approved:  `Contact the owner to arrange pickup. Phone revealed in dashboard.`,
+        rejected:  `The owner was unable to approve your request this time.`,
+        returning: `Waiting for the owner to confirm they received the item back.`,
+        returned:  `The owner confirmed the return. Thank you for being a great borrower!`,
+      };
+      const extra = `
+        <b>📦 Item:</b> ${r.itemName}<br>
+        <b>👤 Owner:</b> ${r.ownerName}
+        ${r.ownerLocation ? "<br><b>📍 Location:</b> " + r.ownerLocation : ""}
+        ${r.requestStatus === "approved" && r.ownerPhone ? "<br><b>📱 Phone:</b> " + r.ownerPhone : ""}
+      `;
+      allNotifs.push({
+        key: "b_" + d.id, icon: cfg.icon, bg: cfg.bg, tab: cfg.tab,
+        title: titles[r.requestStatus] || "Update",
+        desc:  descs[r.requestStatus]  || "",
+        time:  r.createdAt?.toDate?.() || null,
+        extra,
+      });
+    });
+
+    allNotifs.sort((a, b) => (b.time || 0) - (a.time || 0));
+    render("all");
+  });
+</script>
+
+<script>
+(function() {
+  var c = document.getElementById('particle-canvas');
+  var x = c.getContext('2d');
+  var W = c.width = window.innerWidth, H = c.height = window.innerHeight;
+  window.addEventListener('resize', function() { W = c.width = window.innerWidth; H = c.height = window.innerHeight; });
+  var T = '0,212,170', P = '139,92,246';
+  function Pt() { this.x=Math.random()*W; this.y=Math.random()*H; this.vx=(Math.random()-.5)*.4; this.vy=(Math.random()-.5)*.4; this.r=Math.random()*2+1; this.c=Math.random()>.6?P:T; this.a=Math.random()*.4+.1; }
+  Pt.prototype.u = function() { this.x+=this.vx; this.y+=this.vy; if(this.x<0||this.x>W)this.vx*=-1; if(this.y<0||this.y>H)this.vy*=-1; };
+  Pt.prototype.d = function() { x.beginPath(); x.arc(this.x,this.y,this.r,0,Math.PI*2); x.fillStyle='rgba('+this.c+','+this.a+')'; x.fill(); };
+  var ps = []; for(var i=0;i<70;i++) ps.push(new Pt());
+  function ln() { for(var i=0;i<ps.length;i++) for(var j=i+1;j<ps.length;j++){ var dx=ps[i].x-ps[j].x,dy=ps[i].y-ps[j].y,d=Math.sqrt(dx*dx+dy*dy); if(d<130){x.beginPath();x.moveTo(ps[i].x,ps[i].y);x.lineTo(ps[j].x,ps[j].y);x.strokeStyle='rgba('+T+','+(1-d/130)*.12+')';x.lineWidth=.7;x.stroke();}}}
+  function go() { x.clearRect(0,0,W,H); for(var i=0;i<ps.length;i++){ps[i].u();ps[i].d();} ln(); requestAnimationFrame(go); }
+  go();
+})();
+</script>
+</body>
+</html>
